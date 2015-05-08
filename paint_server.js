@@ -1,5 +1,6 @@
 var fs = require("fs");
 var http = require("http");
+var recently_changed = [];
 
 var xcolors = [];
 for(var i = 0; i < 1000; i++)
@@ -63,7 +64,7 @@ function serverFn(req,res)
   }
   else
   {
-    serveFile("mosaic.html", req, res);
+    serveFile("paint.html", req, res);
   }
 }
 
