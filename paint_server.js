@@ -11,18 +11,22 @@ for(var i = 0; i < 1000; i++)
   }
 }
 
-sendCanvas()
+sendCanvas(x,y)//I think we should really send the function x values with ranges of y's as pen strokes and change those ranges all at once, not exactly sure how we'd implement this though.... could be x, y starting point with a size value that always means a certain sized pen with x,y as a vertex (square pen).
 {
-
+  res.writeHead(200);
+  var changed_cell = xcolors[x][y];
+  res.end(JSON.stringify(changed_cell));f
 }
 
-addPaint()
+addPaint(req, res)
 {
-  var x_range = ;
-  var y = ;
-  var color = ;
-  xcolors[x][y] = color;
-  sendCanvas();
+  var input = req.substring(11).split("&");
+  var x = input[0].split("=")[1];//maybe should be a couple lines of code?
+  var y = /input[1].split("=")[1];
+  var color = input[2].split("=")[1];
+  //var size = input[3].split("=")[1];
+  xcolors[x][y] = color;//with size idea this would be in two for loops
+  sendCanvas(x,y);
 }
 
 serveFile(file,req,res)
@@ -51,7 +55,7 @@ function serverFn(req,res)
   }
   else if(req.substring(1,11) == send_paint)
   {
-    addPaint();
+    addPaint(req, res);
   }
   else if(filename == 'paint_client.js')
   {
