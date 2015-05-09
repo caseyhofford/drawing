@@ -1,9 +1,13 @@
 var fs = require("fs");
 var http = require("http");
 
-var CANVAS_SIZE = 1000;
+var CANVAS_SIZE = 200;
 
-/* Array of objects {x,y,c} representing cells that have been changed. */
+/* Array of objects {x,y,c,v} representing cells that have been changed.
+ * x = column
+ * y = row
+ * c = color
+ * v = visited */
 var recentlyChangedCells = [];
 
 /* Multidimensional Array storing all columns and rows of colors in the table. */
@@ -47,20 +51,21 @@ function serverFn(req,res)
     
     if(filename.indexOf("get_changed_cells") > -1)
     {
-        sendChangedCells(req, res);
+        sendChangedCells( req, res );
     }
     else if(filename.indexOf("change_cells") > -1)
     {
         // We are changing some cells (maybe).
-        filename = "./index.html";
         var urlData = filename.split("change_cells")[1];
         if(urlData.indexOf("?") > -1) {
             // Parse URL into an array of cells.
             var cells = getCellsFromUrl( urlData );
             // Add the specified cells to the cells that need to be updated.
+            filename = "./index.html";
             changeCells( filename, req, res, cells );
         } else {
             // No cells were passed as parameters in the URL, so just return index.html.
+            filename = "./index.html";
             serveFile( filename, req, res );
         }
     }
@@ -78,10 +83,18 @@ function getCellsFromUrl( urlData )
     var changedCells = [];
     for(var i=0; i<fields.length; i++) {
         var fieldSplit = fields[i].split("=");
-        var fieldValue = fieldSplit[1];
-        var cellCoords = fieldValue.split("%2C"); // split on comma. %2C = ,
-        if(cellCoords.length === 3)
-            changedCells.push({ x: cellCoords[0], y: cellCoords[1], c: cellCoords[2] });
+        if(fieldSplit.length > 1) {
+            var fieldValue = fieldSplit[1];
+            var cellCoords = fieldValue.split("-"); // split on dash
+            if(cellCoords.length === 3) {
+                changedCells.push({
+                    x: parseInt(cellCoords[0]),
+                    y: parseInt(cellCoords[1]),
+                    c: "#"+cellCoords[2],
+                    v: false
+                });
+            }
+        }
     }
     return changedCells;
 }
@@ -103,6 +116,9 @@ function serveFile( filename, req, res )
     var extension = "html";
     try {
         extension = filename.split(/.\./)[1];
+        if(extension === "js") {
+            extension = "javascript";
+        }
     } catch(e) {
         // Do nothing.
     }
@@ -111,26 +127,37 @@ function serveFile( filename, req, res )
     res.end( contents );
 }
 
-/* I think we should really send the function x values 
- * with ranges of y's as pen strokes and change those ranges
- * all at once, not exactly sure how we'd implement this though....
- * could be x, y starting point with a size value that always means
- * a certain sized pen with x,y as a vertex (square pen). */
+function getFileContents(filename) {
+    return fs.readFileSync( filename ).toString();
+}
+
 function sendChangedCells(req, res)
 {
     res.writeHead(200, {'Content-Type':'application/json'});
-    res.end(JSON.stringify(recentlyChangedCells));
-    // Empty the array.
+    res.end(JSON.stringify(canvas));
+    /*
+    for(var i=0; i<recentlyChangedCells.length; i++) {
+        // If the cell has been visited, delete it.
+        // But this doesn't work for multiple clients, because there isn't
+        // a way to know if all clients have visited these cells.
+    }
     recentlyChangedCells = [];
+    */
 }
 
 function changeCells(filename, req, res, cells)
 {
-    recentlyChangedCells = cells;
-    for(var i=0; i<recentlyChangedCells.length; i++)
+    for(var i=0; i<cells.length; i++) {
+        recentlyChangedCells.push(cells[i]);
+    }
+    var cell;
+    for(i=0; i<recentlyChangedCells.length; i++)
     {
-        canvas[recentlyChangedCells[i].x][recentlyChangedCells[i].y]
-            = recentlyChangedCells[i].c;
+        cell = recentlyChangedCells[i];
+        if(!cell.v) {
+            cell.v = true;
+            canvas[cell.y][cell.x] = cell.c;
+        }
     }
     serveFile(filename, req, res);
 }
