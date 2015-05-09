@@ -65,6 +65,7 @@ function setupCanvasOverlay()
   canvasOverlay.addEventListener("mousedown", function(){
       clickDownFlag = true;
       clickDragFlag = false;
+      changeCell(canvas_mouse_x/cell_size, canvas_mouse_y/cell_size, pen_color);
   }, false);
   canvasOverlay.addEventListener("mousemove", function(){
       clickDragFlag = true;
@@ -87,8 +88,8 @@ function setupCanvasOverlay()
 function addMouseListener()
 {
   document.addEventListener("mousemove", function(e) {
-    var mouse_x = e.clientX || e.pageX;
-    var mouse_y = e.clientY || e.pageY;
+    var mouse_x = e.pageX || e.clientX;
+    var mouse_y = e.pageY || e.clientY;
     canvas_mouse_x = Math.max(Math.floor(mouse_x - canvas_left_x), 0);
     canvas_mouse_y = Math.max(Math.floor(mouse_y - canvas_top_y), 0);
   }, false);
