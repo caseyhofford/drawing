@@ -1,6 +1,7 @@
 window.onload = load;
 
 var canvas_size = 200;
+var cell_size = 3; // Each cell is 3x3 pixels.
 
 var pen_color = "#000000";
 var pen_size = 8;
@@ -68,7 +69,7 @@ function setupCanvasOverlay()
   canvasOverlay.addEventListener("mousemove", function(){
       clickDragFlag = true;
       if(clickDownFlag) {
-          changeCell(canvas_mouse_x, canvas_mouse_y, pen_color);
+          changeCell(canvas_mouse_x/cell_size, canvas_mouse_y/cell_size, pen_color);
       }
   }, false);
   canvasOverlay.addEventListener("mouseup", function(){
@@ -76,7 +77,7 @@ function setupCanvasOverlay()
           console.log("click");
       }
       else if(clickDragFlag && clickDownFlag) {
-          changeCell(canvas_mouse_x, canvas_mouse_y, pen_color);
+          changeCell(canvas_mouse_x/cell_size, canvas_mouse_y/cell_size, pen_color);
           console.log("drag");
       }
       clickDownFlag = false;
