@@ -148,6 +148,9 @@ function sendChangedCells(req, res)
 function changeCells(filename, req, res, cells)
 {
     for(var i=0; i<cells.length; i++) {
+        /* TODO loop through this array and check to see if this cell already exists. 
+         * If so, should just update the color value instead of pushing the whole cell
+         * into the array. This might be why the server isn't "remembering" all the cells. */
         recentlyChangedCells.push(cells[i]);
     }
     var cell;
