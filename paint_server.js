@@ -11,10 +11,10 @@ var CANVAS_SIZE = 200;
 var recentlyChangedCells = [];
 
 /* Multidimensional Array storing all columns and rows of colors in the table. */
-var canvas = new Array();
+var canvas = [];
 for(var i=0; i<CANVAS_SIZE; i++)
 {
-    canvas[i] = new Array();
+    canvas[i] = [];
     for(var j=0; j<CANVAS_SIZE; j++) {
         canvas[i][j] = "#ffffff";
     }
@@ -59,10 +59,9 @@ function serverFn(req,res)
         var urlData = filename.split("change_cells")[1];
         if(urlData.indexOf("?") > -1) {
             // Parse URL into an array of cells.
-            var cells = getCellsFromUrl( urlData );
-            // Add the specified cells to the cells that need to be updated.
+            getCellsFromUrl( urlData );
             filename = "./index.html";
-            changeCells( filename, req, res, cells );
+            serveFile( filename, req, res );
         } else {
             // No cells were passed as parameters in the URL, so just return index.html.
             filename = "./index.html";
@@ -80,31 +79,33 @@ function getCellsFromUrl( urlData )
 {
     var queryData = urlData.split("?")[1];
     var fields = queryData.split("&");
-    var changedCells = [];
     for(var i=0; i<fields.length; i++) {
         var fieldSplit = fields[i].split("=");
         if(fieldSplit.length > 1) {
             var fieldValue = fieldSplit[1];
             var cellCoords = fieldValue.split("-"); // split on dash
             if(cellCoords.length === 3) {
-                changedCells.push({
-                    x: parseInt(cellCoords[0]),
-                    y: parseInt(cellCoords[1]),
-                    c: "#"+cellCoords[2],
-                    v: false
-                });
+                var color = cellCoords[2];
+                if(!isNaN(parseInt(color, 16))) {
+                    color = "#"+cellCoords[2];
+                }
+                try {
+                    canvas[parseInt(cellCoords[1])][parseInt(cellCoords[0])] = color;
+                } catch(e) {
+                    console.log("Error: Couldn't find specified cell from URL in the canvas.");
+                }
             }
         }
     }
-    return changedCells;
 }
 
 /* Load a file */
 function serveFile( filename, req, res )
 {
+    var contents;
     try
     {
-    	var contents = getFileContents( filename );
+    	contents = getFileContents( filename );
     }
     catch( e )
     {
@@ -145,22 +146,32 @@ function sendChangedCells(req, res)
     */
 }
 
+/* DEPRECATED. This function is no longer used. */
 function changeCells(filename, req, res, cells)
 {
-    for(var i=0; i<cells.length; i++) {
-        /* TODO loop through this array and check to see if this cell already exists. 
-         * If so, should just update the color value instead of pushing the whole cell
-         * into the array. This might be why the server isn't "remembering" all the cells. */
-        recentlyChangedCells.push(cells[i]);
-    }
     var cell;
+    for(var i=0; i<cells.length; i++) {
+        cell = cells[i];
+        var foundMatch = false;
+        for(var j=0; j<recentlyChangedCells.length; j++) {
+            var oldCell = recentlyChangedCells[j];
+            if(oldCell.x === cell.x && oldCell.y === cell.y) {
+                oldCell.c = cell.c;
+                oldCell.v = false;
+                foundMatch = true;
+            }
+        }
+        if(!foundMatch) {
+            recentlyChangedCells.push(cell);
+        }
+    }
     for(i=0; i<recentlyChangedCells.length; i++)
     {
         cell = recentlyChangedCells[i];
-        if(!cell.v) {
+        //if(!cell.v) {
             cell.v = true;
             canvas[cell.y][cell.x] = cell.c;
-        }
+        //}
     }
     serveFile(filename, req, res);
 }
