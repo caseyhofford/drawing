@@ -96,8 +96,13 @@ function getCellsFromUrl( urlData )
                 var x = parseInt(cellCoords[0]);
                 var y = parseInt(cellCoords[1]);
                 var color = cellCoords[2];
+                var rgb = color.replace(/%20/g, "").match(/([0-9]+)(?:,|\))/g);
                 if(!isNaN(parseInt(color, 16)) && color.length === 6) {
                     color = "#"+cellCoords[2];
+                } else if(rgb) {
+                    if(rgb.length === 3) {
+                        color = rgbToHex(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]));
+                    }
                 }
                 try {
                     canvas[x][y] = color;
@@ -108,6 +113,15 @@ function getCellsFromUrl( urlData )
         }
     }
     // console.log("PARSED. Received "+i+" cells to change, give or take 1.");
+}
+
+/* This function from http://stackoverflow.com/a/5624139/3673087 */
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
 /* Load a file */

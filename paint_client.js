@@ -105,7 +105,12 @@ function setupColorSelectors()
 {
   var colorSelectors = document.getElementsByClassName("selector");
   for(var i=0; i<colorSelectors.length; i++) {
-    colorSelectors.item(i).onclick = changePenColor;
+    if(i !== colorSelectors.length - 1) {
+      colorSelectors.item(i).onclick = changePenColor;
+    } else {
+      colorSelectors.item(i).onclick = openColorInput;
+      colorSelectors.item(i).getElementsByTagName("input").item(0).oninput = changePenColorInput;
+    }
   }
   var clearButton = document.getElementById("clear");
   clearButton.onclick = clearCanvas;
@@ -118,6 +123,19 @@ function setupColorSelectors()
 function changePenColor()
 {
   pen_color = this.style.backgroundColor;
+  console.log("Changed pen color to " + pen_color);
+}
+
+function openColorInput()
+{
+  console.log("Detected color input click.");
+  this.getElementsByTagName("input").item(0).click();
+}
+
+function changePenColorInput(e)
+{
+  pen_color = this.value;
+  this.parentNode.style.backgroundColor = pen_color;
   console.log("Changed pen color to " + pen_color);
 }
 
@@ -180,7 +198,7 @@ function sendColors()
     var i;
     for(i=0; i<changedCells.length; i++) {
       var cell = changedCells[i];
-      var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+cell.style.backgroundColor+"&";
+      var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+cell.style.backgroundColor.replace("#","")+"&";
       url += newData;
     }
     // console.log("SENDING. Url has "+i+" cells.");
