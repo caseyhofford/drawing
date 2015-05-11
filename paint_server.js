@@ -12,19 +12,14 @@ var recentlyChangedCells = [];
 
 /* Multidimensional Array storing all columns and rows of colors in the table. */
 var canvas = [];
-for(var i=0; i<CANVAS_SIZE; i++)
-{
-    canvas[i] = [];
-    for(var j=0; j<CANVAS_SIZE; j++) {
-        canvas[i][j] = "#ffffff";
-    }
-}
 
 init();
 
 /* Initialize server on specified port. */
 function init()
 {
+    resetCanvas();
+    
     var server = http.createServer( serverFn );
 
     var port;
@@ -38,6 +33,18 @@ function init()
     }
 
     server.listen( port );
+}
+
+function resetCanvas()
+{
+    canvas = [];
+    for(var i=0; i<CANVAS_SIZE; i++)
+    {
+        canvas[i] = [];
+        for(var j=0; j<CANVAS_SIZE; j++) {
+            canvas[i][j] = "#ffffff";
+        }
+    }
 }
 
 function serverFn(req,res)
@@ -68,6 +75,13 @@ function serverFn(req,res)
             serveFile( filename, req, res );
         }
     }
+    else if(filename.indexOf("clear_canvas") > -1)
+    {
+        // Clear the canvas
+        resetCanvas();
+        filename = "./index.html";
+        serveFile(filename, req, res);
+    }
     else
     {
         serveFile(filename, req, res);
@@ -79,24 +93,28 @@ function getCellsFromUrl( urlData )
 {
     var queryData = urlData.split("?")[1];
     var fields = queryData.split("&");
-    for(var i=0; i<fields.length; i++) {
+    var i;
+    for(i=0; i<fields.length; i++) {
         var fieldSplit = fields[i].split("=");
         if(fieldSplit.length > 1) {
             var fieldValue = fieldSplit[1];
             var cellCoords = fieldValue.split("-"); // split on dash
             if(cellCoords.length === 3) {
+                var x = parseInt(cellCoords[0]);
+                var y = parseInt(cellCoords[1]);
                 var color = cellCoords[2];
-                if(!isNaN(parseInt(color, 16))) {
+                if(!isNaN(parseInt(color, 16)) && color.length === 6) {
                     color = "#"+cellCoords[2];
                 }
                 try {
-                    canvas[parseInt(cellCoords[1])][parseInt(cellCoords[0])] = color;
+                    canvas[x][y] = color;
                 } catch(e) {
                     console.log("Error: Couldn't find specified cell from URL in the canvas.");
                 }
             }
         }
     }
+    // console.log("PARSED. Received "+i+" cells to change, give or take 1.");
 }
 
 /* Load a file */

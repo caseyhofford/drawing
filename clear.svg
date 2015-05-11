@@ -8,8 +8,8 @@
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    version="1.1"
-   width="48"
-   height="48"
+   width="24"
+   height="24"
    id="svg3866">
   <defs
      id="defs3868" />
@@ -34,7 +34,7 @@
          d="m 425.71428,382.36218 a 145.71428,147.14285 0 1 1 -291.42856,0 145.71428,147.14285 0 1 1 291.42856,0 z"
          transform="matrix(0,-1,1,0,-102.36218,662.36218)"
          id="path2985"
-         style="fill:#ff0000;stroke:#ffffff;stroke-width:2.0999999;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+         style="fill:#ffffff;stroke:#ffffff;stroke-width:2.0999999;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
       <path
          d="m 281.66236,500.85703 c 0,-126.29791 -0.55009,-195.85893 -1.16752,-234.15721"
          id="path2987"

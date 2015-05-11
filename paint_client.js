@@ -5,6 +5,7 @@ var cell_size = 3; // Each cell is 3x3 pixels.
 
 var pen_color = "#000000";
 var pen_size = 8; // This must always be a multiple of 4.
+var brushSizeSelectors;
 
 var changedCells = [];
 var clickedCells = [];
@@ -27,7 +28,7 @@ function load()
   console.log("Loaded");
   window.setInterval(sendColors, 100);
   window.setTimeout(
-    function() { window.setInterval(pollColors, 500); },
+    function() { window.setInterval(pollColors, 100); },
     500
   );
   setupTable();
@@ -81,7 +82,7 @@ function setupCanvasOverlay()
         clickCell();
       }
   }, true);
-  canvasOverlay.addEventListener("mouseup", function() {
+  document.addEventListener("mouseup", function() {
       if(!clickDragFlag || !clickDownFlag) {
           console.log("click");
       }
@@ -110,6 +111,38 @@ function setupColorSelectors()
   for(var i=0; i<colorSelectors.length; i++) {
     colorSelectors.item(i).onclick = changePenColor;
   }
+  var clearButton = document.getElementById("clear");
+  clearButton.onclick = clearCanvas;
+  brushSizeSelectors = document.getElementsByClassName("brush");
+  for(i=0; i<brushSizeSelectors.length; i++) {
+    brushSizeSelectors.item(i).onclick = changePenSize;
+  }
+}
+
+function changePenColor()
+{
+  pen_color = this.style.backgroundColor;
+  console.log("Changed pen color to " + pen_color);
+}
+
+function changePenSize()
+{
+  pen_size = parseInt(this.getAttribute("data-size"));
+  for(var i=0; i<brushSizeSelectors.length; i++) {
+    var brush = brushSizeSelectors.item(i);
+    if(brush === this) {
+      brush.className = "brush selected";
+    } else {
+      brush.className = "brush";
+    }
+  }
+}
+
+function clearCanvas()
+{
+  var send_change = new XMLHttpRequest();
+  send_change.open("get", "clear_canvas");
+  send_change.send();
 }
 
 function clickCell()
@@ -125,7 +158,8 @@ function clickCell()
         var tableCell = tableArray[rowIndex][cellIndex];
         tableCell.style.backgroundColor = c;
         tableCell.lastUpdated = new Date().getTime();
-        clickedCells.push({ x: cellIndex, y: rowIndex, c: c.replace("#","") });
+        if(clickedCells.indexOf(tableCell) === -1)
+          clickedCells.push(tableCell);
       } catch(e) {
         console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
       }
@@ -135,6 +169,7 @@ function clickCell()
 
 function changeClickedCells()
 {
+  // console.log("MOUSEUP. Clicked "+clickedCells.length+" cells.");
   for(var i=0; i<clickedCells.length; i++) {
     changedCells.push(clickedCells[i]);
   }
@@ -143,13 +178,16 @@ function changeClickedCells()
 
 function sendColors()
 {
-  console.log("Sending colors.");
+  // console.log("Sending colors.");
   if(changedCells.length > 0) {
     var url = "change_cells?";
-    for(var i=0; i<changedCells.length; i++) {
+    var i;
+    for(i=0; i<changedCells.length; i++) {
       var cell = changedCells[i];
-      url += "c"+i+"="+cell.x+"-"+cell.y+"-"+cell.c+"&";
+      var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+cell.style.backgroundColor+"&";
+      url += newData;
     }
+    // console.log("SENDING. Url has "+i+" cells.");
     changedCells = [];
     var send_change = new XMLHttpRequest();
     send_change.open("get", url);
@@ -159,7 +197,7 @@ function sendColors()
 
 function pollColors()
 {
-  console.log("Polling colors.");
+  // console.log("Polling colors.");
   var request_colors = new XMLHttpRequest();
   request_colors.startTime = new Date().getTime();
   request_colors.onload = colorsListener;
@@ -170,8 +208,10 @@ function pollColors()
 function colorsListener()
 {
   this.endTime = new Date().getTime();
-  console.log("Request load time: "+(this.endTime-this.startTime)+". Parsing response...");
+  // console.log("Request load time: "+(this.endTime-this.startTime)+". Parsing response...");
   var canvas = JSON.parse(this.responseText);
+  var cellCount = 0;
+  var changedCellCount = 0;
   if(canvas instanceof Array) {
     for(var i=0; i<canvas.length; i++) {
       var canvasRow = canvas[i];
@@ -181,31 +221,56 @@ function colorsListener()
           var cellColor = canvasRow[j];
           var tableCell = tableRow[j];
           if(tableCell) {
+            cellCount++;
             var currentColor = tableCell.style.backgroundColor;
-            if(currentColor != cellColor &&
-              this.startTime - tableCell.lastUpdated > 0 &&
-              changedCells.indexOf(tableCell) === -1 &&
-              clickedCells.indexOf(tableCell) === -1) {
+            if(!colorsSame(currentColor, cellColor) &&
+                this.startTime - tableCell.lastUpdated > 0 &&
+                changedCells.indexOf(tableCell) === -1 &&
+                clickedCells.indexOf(tableCell) === -1) {
+                  
+              changedCellCount++;
               tableCell.style.backgroundColor = cellColor;
-              // console.log("Changing cell ["+i+", "+j+"] to " + cellColor + ".");
+              
             } else {
               // console.log("Warning: Cell ["+i+", "+j+"] has been updated on the client more recently than the server. Won't overwrite.");
             }
           } else {
-            console.log("Response did not match table cell.");
+            console.log("Error: Response did not match table cell.");
           }
         }
       } else {
-        console.log("Response was not a multidimensional array.");
+        console.log("Error: Response was not a multidimensional array.");
       }
     }
   } else {
-    console.log("Response was not an array.");
+    console.log("Error: Response was not an array.");
   }
+  // console.log("DONE PARSING. Response changed "+changedCellCount+" cells ("+cellCount+" total).");
 }
 
-function changePenColor()
-{
-  pen_color = this.style.backgroundColor;
-  console.log("Changed pen color to " + pen_color);
+function colorsSame(color1, color2) {
+  var same = false;
+  if(color1 === color2) {
+    same = true;
+  } else {
+    if(color1.toString().indexOf("#") > -1 && color2.toString().indexOf("rgb") > -1) {
+      color1 = hexToRgb(color1);
+    } else if(color2.toString().indexOf("#") > -1 && color1.toString().indexOf("rgb") > -1) {
+      color2 = hexToRgb(color2);
+    }
+    if(color1 === color2) {
+      same = true;
+    }
+  }
+  return same;
+}
+
+/* This function from http://stackoverflow.com/a/5624139/3673087 */
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ?
+        "rgb(" + parseInt(result[1], 16) + ", " +
+        parseInt(result[2], 16) + ", " +
+        parseInt(result[3], 16) + ")"
+    : null;
 }

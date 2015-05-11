@@ -2,3 +2,5 @@
 By Casey Hofford and Soeren Walls
 
 This node.js app allows multiple people to draw on the same canvas in their browser simultaneously.
+
+![Screenshot](/screenshot.png?raw=true "Screenshot")
