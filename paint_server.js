@@ -3,13 +3,6 @@ var http = require("http");
 
 var CANVAS_SIZE = 200;
 
-/* Array of objects {x,y,c,v} representing cells that have been changed.
- * x = column
- * y = row
- * c = color
- * v = visited */
-var recentlyChangedCells = [];
-
 /* Multidimensional Array storing all columns and rows of colors in the table. */
 var canvas = [];
 
@@ -154,44 +147,6 @@ function sendChangedCells(req, res)
 {
     res.writeHead(200, {'Content-Type':'application/json'});
     res.end(JSON.stringify(canvas));
-    /*
-    for(var i=0; i<recentlyChangedCells.length; i++) {
-        // If the cell has been visited, delete it.
-        // But this doesn't work for multiple clients, because there isn't
-        // a way to know if all clients have visited these cells.
-    }
-    recentlyChangedCells = [];
-    */
-}
-
-/* DEPRECATED. This function is no longer used. */
-function changeCells(filename, req, res, cells)
-{
-    var cell;
-    for(var i=0; i<cells.length; i++) {
-        cell = cells[i];
-        var foundMatch = false;
-        for(var j=0; j<recentlyChangedCells.length; j++) {
-            var oldCell = recentlyChangedCells[j];
-            if(oldCell.x === cell.x && oldCell.y === cell.y) {
-                oldCell.c = cell.c;
-                oldCell.v = false;
-                foundMatch = true;
-            }
-        }
-        if(!foundMatch) {
-            recentlyChangedCells.push(cell);
-        }
-    }
-    for(i=0; i<recentlyChangedCells.length; i++)
-    {
-        cell = recentlyChangedCells[i];
-        //if(!cell.v) {
-            cell.v = true;
-            canvas[cell.y][cell.x] = cell.c;
-        //}
-    }
-    serveFile(filename, req, res);
 }
 
 /* Return a 404 page */

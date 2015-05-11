@@ -3,7 +3,7 @@ window.onload = load;
 var canvas_size = 200;
 var cell_size = 3; // Each cell is 3x3 pixels.
 
-var pen_color = "#000000";
+var pen_color = "black";
 var pen_size = 8; // This must always be a multiple of 4.
 var brushSizeSelectors;
 
@@ -14,8 +14,6 @@ var canvas_mouse_x = 0;
 var canvas_mouse_y = 0;
 var canvas_left_x = 0;
 var canvas_top_y = 0;
-var canvas_width = canvas_size;
-var canvas_height = canvas_size;
 
 var table, canvasOverlay;
 var clickDownFlag = false;
@@ -26,15 +24,15 @@ var tableArray = [];
 function load()
 {
   console.log("Loaded");
-  window.setInterval(sendColors, 100);
-  window.setTimeout(
-    function() { window.setInterval(pollColors, 100); },
-    500
-  );
   setupTable();
   setupCanvasOverlay();
   addMouseListener();
   setupColorSelectors();
+  window.setInterval(pollColors, 200);
+  window.setTimeout(
+    function() { window.setInterval(sendColors, 100); },
+    100
+  );
 }
 
 function setupTable()
@@ -63,8 +61,6 @@ function setupTable()
 function setupCanvasOverlay()
 {
   canvasOverlay = document.getElementById("canvas_overlay");
-  canvas_width = canvasOverlay.offsetWidth;
-  canvas_height = canvasOverlay.offsetHeight;
   canvas_left_x = canvasOverlay.getBoundingClientRect().left;
   canvas_top_y = canvasOverlay.getBoundingClientRect().top;
   
