@@ -205,7 +205,7 @@ function sendColors()
     var i;
     for(i=0; i<changedCells.length; i++) {
       var cell = changedCells[i];
-      console.log(cell);
+      //console.log(cell);
       //newColorHash = cell.style.backgroundColor;
       //newColor = newColorHash.replace("#","");
       //console.log(cell.x);
@@ -302,7 +302,7 @@ function hexToRgb(hex) {
 
 function smooth(newCell)
 {
-  console.log("new:"+newCell+"old:"+lastCell);
+  //console.log("new:"+newCell+"old:"+lastCell);
   var pen_radius = pen_size/2;
   var right, down;
   if (Math.abs(newCell[0]-lastCell[0]) <= pen_radius && Math.abs(newCell[1]-lastCell[1]) <= pen_radius)
@@ -323,14 +323,25 @@ function smooth(newCell)
       console.log("slope"+slope);
       for (i = 1; i < Math.abs(newCell[1]-lastCell[1]); i++)
       {
-        var new0 = Math.floor(lastCell[0]+(slope*i));
-        //console.log(i+"[0]:"+new0);
-        if((newCell[1]-lastCell[1])>0)
+        if ((newCell[0]-lastCell[0])>0 && (newCell[1]-lastCell[1])>0)
         {
+          var new0 = Math.floor(lastCell[0]+(slope*i));
           var new1 = Math.floor(lastCell[1]+i);
         }
-        else
+        //console.log(i+"[0]:"+new0);
+        else if ((newCell[0]-lastCell[0])<0 && (newCell[1]-lastCell[1])>0)
         {
+          var new0 = Math.floor(lastCell[0]+(slope*i));
+          var new1 = Math.floor(lastCell[1]+i);
+        }
+        else if((newCell[0]-lastCell[0])<0 && (newCell[1]-lastCell[1])<0)
+        {
+          var new0 = Math.floor(lastCell[0]+(slope*(-i)));
+          var new1 = Math.floor(lastCell[1]-i);
+        }
+        else if((newCell[0]-lastCell[0])>0 && (newCell[1]-lastCell[1])<0)
+        {
+          var new0 = Math.floor(lastCell[0]+(slope*(-i)));
           var new1 = Math.floor(lastCell[1]-i);
         }
         //console.log("[1]:"+new1);
