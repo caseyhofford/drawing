@@ -9,6 +9,7 @@ var brushSizeSelectors;
 
 var changedCells = [];
 var clickedCells = [];
+var lastCell = [];
 
 var canvas_mouse_x = 0;
 var canvas_mouse_y = 0;
@@ -63,10 +64,10 @@ function setupCanvasOverlay()
   canvasOverlay = document.getElementById("canvas_overlay");
   canvas_left_x = canvasOverlay.getBoundingClientRect().left;
   canvas_top_y = canvasOverlay.getBoundingClientRect().top;
-  
+
   /* This mouse drag detection code adapted from:
    * http://stackoverflow.com/a/6042235/3673087 */
-   
+
   canvasOverlay.addEventListener("mousedown", function() {
       clickDownFlag = true;
       clickDragFlag = false;
@@ -173,7 +174,12 @@ function clickCell()
         tableCell.style.backgroundColor = c;
         tableCell.lastUpdated = new Date().getTime();
         if(clickedCells.indexOf(tableCell) === -1)
-          clickedCells.push(tableCell);
+        {
+          clickedCells.push(tableCell, c);
+          smooth([rowIndex,cellIndex]);
+          lastCell = [rowIndex,cellIndex];
+        }
+
       } catch(e) {
         console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
       }
@@ -241,10 +247,10 @@ function colorsListener()
                 this.startTime - tableCell.lastUpdated > 0 &&
                 changedCells.indexOf(tableCell) === -1 &&
                 clickedCells.indexOf(tableCell) === -1) {
-                  
+
               changedCellCount++;
               tableCell.style.backgroundColor = cellColor;
-              
+
             } else {
               // console.log("Warning: Cell ["+i+", "+j+"] has been updated on the client more recently than the server. Won't overwrite.");
             }
@@ -287,4 +293,69 @@ function hexToRgb(hex) {
         parseInt(result[2], 16) + ", " +
         parseInt(result[3], 16) + ")"
     : null;
+}
+
+function smooth(newCell)
+{
+  console.log("new:"+newCell+"old:"+lastCell);
+  var pen_radius = pen_size/2;
+  var right, down;
+  if (Math.abs(newCell[0]-lastCell[0]) <= pen_radius && Math.abs(newCell[1]-lastCell[1]) <= pen_radius)
+  {
+    return;
+  }
+  if (lastCell = [])
+  {
+    lastCell = newCell;
+    return;
+  }
+  else
+  {
+    console.log(lastCell)
+    if (clickDownFlag && clickDragFlag)
+    {
+      var slope = (newCell[0]-lastCell[0])/(newCell[1]-lastCell[1]);
+      for (i = 1; i < Math.abs(newCell[1]-lastCell[1]); i++)
+      {
+        var new0 = Math.floor(lastCell[0]+(slope*i));
+        //console.log(i+"[0]:"+new0);
+        if((newCell[1]-lastCell[1])>0)
+        {
+          var new1 = Math.floor(lastCell[1]+i);
+        }
+        else
+        {
+          var new1 = Math.floor(lastCell[1]-i);
+        }
+        //console.log("[1]:"+new1);
+        var tableCell = tableArray[new0][new1];
+        tableCell.style.backgroundColor = pen_color;
+        tableCell.lastUpdated = new Date().getTime();
+        console.log(tableCell);
+        clickedCells.push(tableCell, c);
+
+        /*for(var i=0; i<pen_radius; i++) {
+          for(var j=0; j<pen_radius; j++) {
+            var cellIndex = new1 + (pen_size/4 - i);
+            var rowIndex = new0 + (pen_size/4 - j);
+            try {
+              var tableCell = tableArray[rowIndex][cellIndex];
+              tableCell.style.backgroundColor = pen_color;
+              tableCell.lastUpdated = new Date().getTime();
+              if(clickedCells.indexOf(tableCell) === -1)
+              {
+                clickedCells.push(tableCell, c);
+                smooth([rowIndex,cellIndex]);
+                lastCell = [rowIndex,cellIndex];
+              }
+
+            } catch(e) {
+              console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
+            }
+          }
+        }*/
+      }
+      console.log("slope"+slope);
+    }
+  }
 }
