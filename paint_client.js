@@ -204,7 +204,10 @@ function sendColors()
     var i;
     for(i=0; i<changedCells.length; i++) {
       var cell = changedCells[i];
-      var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+cell.style.backgroundColor.replace("#","")+"&";
+      //newColorHash = cell.style.backgroundColor;
+      //newColor = newColorHash.replace("#","");
+      console.log(cell.x);
+      var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+pen_color+"&";
       url += newData;
     }
     // console.log("SENDING. Url has "+i+" cells.");
@@ -304,17 +307,18 @@ function smooth(newCell)
   {
     return;
   }
-  if (lastCell = [])
+  /*if (lastCell = [])
   {
     lastCell = newCell;
     return;
-  }
+  }*/
   else
   {
     console.log(lastCell)
     if (clickDownFlag && clickDragFlag)
     {
       var slope = (newCell[0]-lastCell[0])/(newCell[1]-lastCell[1]);
+      console.log("slope"+slope);
       for (i = 1; i < Math.abs(newCell[1]-lastCell[1]); i++)
       {
         var new0 = Math.floor(lastCell[0]+(slope*i));
@@ -332,7 +336,7 @@ function smooth(newCell)
         tableCell.style.backgroundColor = pen_color;
         tableCell.lastUpdated = new Date().getTime();
         console.log(tableCell);
-        clickedCells.push(tableCell, c);
+        clickedCells.push(tableCell, pen_color);
 
         /*for(var i=0; i<pen_radius; i++) {
           for(var j=0; j<pen_radius; j++) {
@@ -355,7 +359,6 @@ function smooth(newCell)
           }
         }*/
       }
-      console.log("slope"+slope);
     }
   }
 }
