@@ -171,11 +171,12 @@ function clickCell()
       var rowIndex = y + (pen_size/4 - j);
       try {
         var tableCell = tableArray[rowIndex][cellIndex];
+        //console.log(tableCell);
         tableCell.style.backgroundColor = c;
         tableCell.lastUpdated = new Date().getTime();
         if(clickedCells.indexOf(tableCell) === -1)
         {
-          clickedCells.push(tableCell, c);
+          clickedCells.push(tableCell); //,pen color?
           smooth([rowIndex,cellIndex]);
           lastCell = [rowIndex,cellIndex];
         }
@@ -204,9 +205,10 @@ function sendColors()
     var i;
     for(i=0; i<changedCells.length; i++) {
       var cell = changedCells[i];
+      console.log(cell);
       //newColorHash = cell.style.backgroundColor;
       //newColor = newColorHash.replace("#","");
-      console.log(cell.x);
+      //console.log(cell.x);
       var newData = "c"+i+"="+cell.x+"-"+cell.y+"-"+pen_color+"&";
       url += newData;
     }
@@ -332,11 +334,17 @@ function smooth(newCell)
           var new1 = Math.floor(lastCell[1]-i);
         }
         //console.log("[1]:"+new1);
-        var tableCell = tableArray[new0][new1];
-        tableCell.style.backgroundColor = pen_color;
-        tableCell.lastUpdated = new Date().getTime();
-        console.log(tableCell);
-        clickedCells.push(tableCell, pen_color);
+        try{
+          var tableCell = tableArray[new0][new1];
+          tableCell.style.backgroundColor = pen_color;
+          tableCell.lastUpdated = new Date().getTime();
+          console.log(tableCell);
+          clickedCells.push(tableCell, pen_color);
+        }
+        catch(e)
+        {
+          console.log("Couldn't paint cell")
+        }
 
         /*for(var i=0; i<pen_radius; i++) {
           for(var j=0; j<pen_radius; j++) {
@@ -346,12 +354,7 @@ function smooth(newCell)
               var tableCell = tableArray[rowIndex][cellIndex];
               tableCell.style.backgroundColor = pen_color;
               tableCell.lastUpdated = new Date().getTime();
-              if(clickedCells.indexOf(tableCell) === -1)
-              {
-                clickedCells.push(tableCell, c);
-                smooth([rowIndex,cellIndex]);
-                lastCell = [rowIndex,cellIndex];
-              }
+              clickedCells.push(tableCell);
 
             } catch(e) {
               console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
