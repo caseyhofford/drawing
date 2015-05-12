@@ -345,7 +345,7 @@ function smooth(newCell)
           var new1 = Math.floor(lastCell[1]-i);
         }
         //console.log("[1]:"+new1);
-        try{
+        /*try{
           var tableCell = tableArray[new0][new1];
           tableCell.style.backgroundColor = pen_color;
           tableCell.lastUpdated = new Date().getTime();
@@ -355,9 +355,9 @@ function smooth(newCell)
         catch(e)
         {
           console.log("Couldn't paint cell")
-        }
+        }*/
 
-        /*for(var i=0; i<pen_radius; i++) {
+        for(var i=0; i<pen_radius; i++) {
           for(var j=0; j<pen_radius; j++) {
             var cellIndex = new1 + (pen_size/4 - i);
             var rowIndex = new0 + (pen_size/4 - j);
@@ -371,7 +371,7 @@ function smooth(newCell)
               console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
             }
           }
-        }*/
+        }
       }
     }
   }
