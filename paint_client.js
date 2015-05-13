@@ -9,7 +9,7 @@ var brushSizeSelectors;
 
 var changedCells = [];
 var clickedCells = [];
-var lastCell = [];
+var lastCell;
 
 var canvas_mouse_x = 0;
 var canvas_mouse_y = 0;
@@ -21,6 +21,8 @@ var clickDownFlag = false;
 var clickDragFlag = false;
 
 var tableArray = [];
+
+var DO_SMOOTH_EFFECT = false;
 
 function load()
 {
@@ -89,6 +91,7 @@ function setupCanvasOverlay()
       }
       changeClickedCells();
       clickDownFlag = false;
+      lastCell = null;
   }, true);
 }
 
@@ -160,11 +163,10 @@ function clearCanvas()
   send_change.send();
 }
 
-function clickCell(cell)
+function clickCell(cell, notSmooth)
 {
   var x = Math.round(canvas_mouse_x/cell_size);
   var y = Math.round(canvas_mouse_y/cell_size);
-  var tableCell;
   //var cellToSmooth;
   //console.log(x+":"+y);
 
@@ -172,18 +174,17 @@ function clickCell(cell)
     x = cell.x;
     y = cell.y;
   }
-  if(lastCell === [])
+  if(!lastCell)
   {
     lastCell = tableArray[y][x];
   }
-  console.log(x+" : "+lastCell.x);
   var c = pen_color;
   for(var i=0; i<pen_size/2; i++) {
     for(var j=0; j<pen_size/2; j++) {
       var cellIndex = x + (pen_size/4 - i);
       var rowIndex = y + (pen_size/4 - j);
       try {
-        tableCell = tableArray[rowIndex][cellIndex];
+        var tableCell = tableArray[rowIndex][cellIndex];
         //console.log(tableCell);
         tableCell.style.backgroundColor = c;
         tableCell.lastUpdated = new Date().getTime();
@@ -197,25 +198,33 @@ function clickCell(cell)
       }
     }
   }
-  var yAbsDiff = (Math.abs((lastCell.x)-y));
-  var xAbsDiff = (Math.abs((lastCell.y)-x));
-  console.log("AbsDiff: "+xAbsDiff+":"+yAbsDiff)
-  if(xAbsDiff>= pen_size/4 && yAbsDiff>= pen_size/4)
+  
+  // return;  // Comment out this line to execute the "smoothing" code.
+  
+  if(DO_SMOOTH_EFFECT && (typeof notSmooth === 'undefined' || !notSmooth)) {
+    var yAbsDiff = (Math.abs((lastCell.x)-y));
+    var xAbsDiff = (Math.abs((lastCell.y)-x));
+    console.log("AbsDiff: "+xAbsDiff+":"+yAbsDiff);
+    if(xAbsDiff >= pen_size/4 && yAbsDiff >= pen_size/4)
     {
-      console.log(tableArray[y][x]);
+      // console.log(tableArray[y][x]);
       var cellToSmooth = tableArray[y][x];
-      //console.log(cellToSmooth);
-      try{
-      var smoothCells = smooth(cellToSmooth);
+      if(cellToSmooth) {
+        try {
+          var smoothCells = smooth(cellToSmooth);
+          for(var k=0; k<smoothCells.length; k++) {
+            var sCell = smoothCells[k];
+            clickCell(sCell, true);
+          }
+        }
+        catch(e)
+        {
+          // console.log(e.message);
+        }
+        lastCell = cellToSmooth;
       }
-      catch(e)
-      {console.log(e);
-      }
-      for(var k=0; k<smoothCells.length; k++) {
-        clickCell(smoothCells[k]);
     }
   }
-  lastCell = tableCell;
 }
 
 function changeClickedCells()
@@ -332,7 +341,7 @@ function hexToRgb(hex) {
 
 function smooth(newCell)
 {
-  //console.log("new:"+newCell+"old:"+lastCell);
+  // console.log("new:"+newCell+"old:"+lastCell);
   var pen_radius = pen_size/2;
   //var right, down
   var newCellX = newCell.x;
@@ -340,86 +349,54 @@ function smooth(newCell)
   var lastCellX = lastCell.x;
   var lastCellY = lastCell.y;
   var xDiff = newCellX-lastCellX;
-  var xDiffAbs = Math.abs(xDiff);
+  var xDiffAbs = Math.abs(xDiff)*cell_size;
   var yDiff = (newCellY-lastCellY);
   var yDiffAbs = Math.abs(newCellY-lastCellY);
 
-
   var cellsToAdd = [];
-  console.log("x:"+newCellX+" y:"+newCellY);
-  //console.log(lastCell);
-  console.log("new: "+newCellX+"old: "+lastCellX);
-  if (clickDragFlag)
+  
+  // console.log("x:"+newCellX+" y:"+newCellY);
+  // console.log(lastCell);
+  // console.log("new: "+newCellX+"old: "+lastCellX);
+  var new1, new0;
+  var slope = (newCellX-lastCellX)/(newCellY-lastCellY);
+  for (var i = 1; i < xDiffAbs; i+=cell_size)
   {
-    var new1, new0;
-    var slope = (newCellX-lastCellX)/(newCellY-lastCellY);
-    for (i = 1; i < xDiffAbs; i+=cell_size)
+    if(!isFinite(slope) || slope > 15 || slope < -15)
     {
-      if(!isFinite(slope) || slope  > 15 || slope < -15)
+      if(xDiff > 0)//move down
       {
-        if(xDiff > 0)//move down
-        {
-          new1 = lastCellY;
-          new0 = lastCellX + i;
-        }
-        else if (xDiff < 0)//move up
-        {
-          new1 = lastCellY;
-          new0 = lastCellX - i;
-        }
+        new1 = lastCellY;
+        new0 = lastCellX + i;
       }
-      else if (isFinite(slope) && !isNaN(slope))
+      else if (xDiff < 0)//move up
       {
-        //console.log("x: "+xDiff+" y: "+yDiff);
-        if ((xDiff>0 && yDiff>0) || (xDiff<0 && yDiff>0))//down,right
-        {
-          new0 = Math.floor(lastCellX+(slope*i));
-          new1 = Math.floor(lastCellY+i);
-        }
-        //console.log(i+"[0]:"+new0);
-        else if(((newCellX-lastCellX)<0 && (newCellY-lastCellY)<0)||((newCellX-lastCellX)>0 && (newCellY-lastCellY)<0))//up,left
-        {
-          new0 = Math.floor(lastCellX+(slope*(-i)));
-          new1 = Math.floor(lastCellY-i);
-        }
-        //console.log("[1]:"+new1);
-        /*try{
-          var tableCell = tableArray[new0][new1];
-          tableCell.style.backgroundColor = pen_color;
-          tableCell.lastUpdated = new Date().getTime();
-          console.log(tableCell);
-          clickedCells.push(tableCell, pen_color);
-        }
-        catch(e)
-        {
-          console.log("Couldn't paint cell")
-        }*/
-
-        /*for(var i=0; i<pen_radius; i++) {
-          for(var j=0; j<pen_radius; j++) {
-            var cellIndex = new1 + (pen_size/4 - i);
-            var rowIndex = new0 + (pen_size/4 - j);
-            try {
-              var tableCell = tableArray[rowIndex][cellIndex];
-              tableCell.style.backgroundColor = pen_color;
-              tableCell.lastUpdated = new Date().getTime();
-              clickedCells.push(tableCell);
-
-            } catch(e) {
-              console.log("Error: Couldn't paint cell ["+rowIndex+", "+cellIndex+"].");
-            }
-          }
-        }*/
+        new1 = lastCellY;
+        new0 = lastCellX - i;
       }
-      cellsToAdd.push(tableArray[new0][new1]);
     }
-    /*console.log("0:"+new0+" 1:"+new1);
-    var url = "build_array?zero="+new0+"&one="+new1+"&color="+pen_color+"&size="+pen_radius;
-    var build_array = new XMLHttpRequest;
-    build_array.onload = colorsListener;
-    build_array.open("get", url);
-    build_array.send();
-  }*/
+    else if (isFinite(slope) && !isNaN(slope) && slope !== 0)
+    {
+      // console.log("x: "+xDiff+" y: "+yDiff);
+      if ((xDiff>0 && yDiff>0) || (xDiff<0 && yDiff>0))//down,right
+      {
+        new0 = Math.floor(lastCellX+(slope*i));
+        new1 = Math.floor(lastCellY+i);
+      }
+      // console.log(i+"[0]:"+new0);
+      else if((xDiff<0 && yDiff<0)||(xDiff>0 && yDiff<0))//up,left
+      {
+        new0 = Math.floor(lastCellX+(slope*(-i)));
+        new1 = Math.floor(lastCellY-i);
+      }
+    }
+    cellsToAdd.push(tableArray[new1][new0]);
   }
+  /*console.log("0:"+new0+" 1:"+new1);
+  var url = "build_array?zero="+new0+"&one="+new1+"&color="+pen_color+"&size="+pen_radius;
+  var build_array = new XMLHttpRequest;
+  build_array.onload = colorsListener;
+  build_array.open("get", url);
+  build_array.send();*/
   return cellsToAdd;
 }
