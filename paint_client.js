@@ -22,7 +22,7 @@ var clickDragFlag = false;
 
 var tableArray = [];
 
-var DO_SMOOTH_EFFECT = false;
+var DO_SMOOTH_EFFECT = true;
 
 function load()
 {
@@ -202,8 +202,8 @@ function clickCell(cell, notSmooth)
   // return;  // Comment out this line to execute the "smoothing" code.
   
   if(DO_SMOOTH_EFFECT && (typeof notSmooth === 'undefined' || !notSmooth)) {
-    var yAbsDiff = (Math.abs((lastCell.x)-y));
-    var xAbsDiff = (Math.abs((lastCell.y)-x));
+    var xAbsDiff = Math.abs(lastCell.x - x);
+    var yAbsDiff = Math.abs(lastCell.y - y);
     console.log("AbsDiff: "+xAbsDiff+":"+yAbsDiff);
     if(xAbsDiff >= pen_size/4 && yAbsDiff >= pen_size/4)
     {
@@ -214,7 +214,18 @@ function clickCell(cell, notSmooth)
           var smoothCells = smooth(cellToSmooth);
           for(var k=0; k<smoothCells.length; k++) {
             var sCell = smoothCells[k];
-            clickCell(sCell, true);
+            if(!sCell)
+              continue;
+            var cellAbsDiffX = Math.abs(lastCell.x - sCell.x);
+            var cellAbsDiffY = Math.abs(lastCell.y - sCell.y);
+            console.log("cellAbsDiff: "+xAbsDiff+":"+yAbsDiff);
+            if(cellAbsDiffX <= xAbsDiff && cellAbsDiffY <= yAbsDiff &&
+                ( (x < lastCell.x && sCell.x > lastCell.x) || (x > lastCell.x && sCell.x < lastCell.x) ) &&
+                ( (y < lastCell.y && sCell.y > lastCell.y) || (y > lastCell.y && sCell.y < lastCell.y) )) {
+                
+              clickCell(sCell, true);
+              
+            }
           }
         }
         catch(e)
@@ -350,8 +361,8 @@ function smooth(newCell)
   var lastCellY = lastCell.y;
   var xDiff = newCellX-lastCellX;
   var xDiffAbs = Math.abs(xDiff)*cell_size;
-  var yDiff = (newCellY-lastCellY);
-  var yDiffAbs = Math.abs(newCellY-lastCellY);
+  var yDiff = newCellY-lastCellY;
+  var yDiffAbs = Math.abs(yDiff);
 
   var cellsToAdd = [];
   
@@ -364,12 +375,12 @@ function smooth(newCell)
   {
     if(!isFinite(slope) || slope > 15 || slope < -15)
     {
-      if(xDiff > 0)//move down
+      if(xDiff > 0) //move down
       {
         new1 = lastCellY;
         new0 = lastCellX + i;
       }
-      else if (xDiff < 0)//move up
+      else if (xDiff < 0) //move up
       {
         new1 = lastCellY;
         new0 = lastCellX - i;
@@ -378,13 +389,13 @@ function smooth(newCell)
     else if (isFinite(slope) && !isNaN(slope) && slope !== 0)
     {
       // console.log("x: "+xDiff+" y: "+yDiff);
-      if ((xDiff>0 && yDiff>0) || (xDiff<0 && yDiff>0))//down,right
+      if ((xDiff>0 && yDiff>0) || (xDiff<0 && yDiff>0)) //down,right
       {
         new0 = Math.floor(lastCellX+(slope*i));
         new1 = Math.floor(lastCellY+i);
       }
       // console.log(i+"[0]:"+new0);
-      else if((xDiff<0 && yDiff<0)||(xDiff>0 && yDiff<0))//up,left
+      else if((xDiff<0 && yDiff<0)||(xDiff>0 && yDiff<0)) //up,left
       {
         new0 = Math.floor(lastCellX+(slope*(-i)));
         new1 = Math.floor(lastCellY-i);
