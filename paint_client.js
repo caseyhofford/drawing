@@ -219,6 +219,7 @@ function clickCell(cell, notSmooth)
             var cellAbsDiffX = Math.abs(lastCell.x - sCell.x);
             var cellAbsDiffY = Math.abs(lastCell.y - sCell.y);
             console.log("cellAbsDiff: "+xAbsDiff+":"+yAbsDiff);
+            
             if(cellAbsDiffX <= xAbsDiff && cellAbsDiffY <= yAbsDiff &&
                 ( (x < lastCell.x && sCell.x > lastCell.x) || (x > lastCell.x && sCell.x < lastCell.x) ) &&
                 ( (y < lastCell.y && sCell.y > lastCell.y) || (y > lastCell.y && sCell.y < lastCell.y) )) {
@@ -226,6 +227,7 @@ function clickCell(cell, notSmooth)
               clickCell(sCell, true);
               
             }
+            
           }
         }
         catch(e)
@@ -360,18 +362,18 @@ function smooth(newCell)
   var lastCellX = lastCell.x;
   var lastCellY = lastCell.y;
   var xDiff = newCellX-lastCellX;
-  var xDiffAbs = Math.abs(xDiff)*cell_size;
+  var xDiffAbs = Math.abs(xDiff)/cell_size;
   var yDiff = newCellY-lastCellY;
   var yDiffAbs = Math.abs(yDiff);
 
   var cellsToAdd = [];
   
-  // console.log("x:"+newCellX+" y:"+newCellY);
+  console.log("x:"+newCellX+" y:"+newCellY);
   // console.log(lastCell);
   // console.log("new: "+newCellX+"old: "+lastCellX);
   var new1, new0;
   var slope = (newCellX-lastCellX)/(newCellY-lastCellY);
-  for (var i = 1; i < xDiffAbs; i+=cell_size)
+  for (var i = 0; i < xDiffAbs; i+=1)
   {
     if(!isFinite(slope) || slope > 15 || slope < -15)
     {
