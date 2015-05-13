@@ -166,8 +166,8 @@ function clickCell(cell)
   var y = Math.round(canvas_mouse_y/cell_size);
   var tableCell;
   if(cell) {
-    x = parseInt(cell.x);
-    y = parseInt(cell.y);
+    x = cell.x;
+    y = cell.y;
   }
   if(lastCell = [])
   {
@@ -193,7 +193,7 @@ function clickCell(cell)
       }
     }
   }
-  console.log(x+" "+y);
+  console.log(tableArray[x][y]);
   var cellToSmooth = tableArray[x][y];
   console.log(celltoSmooth);
   var smoothCells = smooth(cellToSmooth);
