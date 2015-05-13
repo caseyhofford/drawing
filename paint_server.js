@@ -12,7 +12,7 @@ init();
 function init()
 {
     resetCanvas();
-    
+
     var server = http.createServer( serverFn );
 
     var port;
@@ -43,13 +43,13 @@ function resetCanvas()
 function serverFn(req,res)
 {
     var filename = req.url.substring( 1, req.url.length );
-    
+
     if(filename === "")
     {
         filename = "./index.html";
     }
-    
-    if(filename.indexOf("get_changed_cells") > -1)
+
+    if(filename.indexOf("get_changed_cells") > -1)//how does indexOf > -1 work? and why is this if, not else if?
     {
         sendChangedCells( req, res );
     }
@@ -74,6 +74,11 @@ function serverFn(req,res)
         resetCanvas();
         filename = "./index.html";
         serveFile(filename, req, res);
+    }
+    else if(filename.indexOf("build_array") > -1)
+    {
+      //runs the full line builder from the smooth function serverside to avoid crashes.
+      buildArray(filename,req,res);
     }
     else
     {
@@ -138,7 +143,7 @@ function serveFile( filename, req, res )
         fourZeroFour(filename, res);
         return;
     }
-    
+
     var extension = "html";
     try {
         extension = filename.split(/.\./)[1];
@@ -161,6 +166,29 @@ function sendChangedCells(req, res)
 {
     res.writeHead(200, {'Content-Type':'application/json'});
     res.end(JSON.stringify(canvas));
+}
+
+function buildArray(filename, req, res)
+{
+  var requests = filename.split("?")[1].split("&");
+  var new0 = Math.floor(requests[0].split("=")[1]);
+  var new1 = Math.floor(requests[1].split("=")[1]);
+  var color = requests[2].split("=")[1];
+  var pen_radius = requests[3].split("=")[1];
+  for(var i=0; i<pen_radius; i++) {
+    for(var j=0; j<pen_radius; j++) {
+      console.log("1:"+new1+" 0:"+new0);
+      var cellIndex = new1 + (pen_radius/2 - i);
+      var rowIndex = new0 + (pen_radius/2 - j);
+      try {
+        canvas[rowIndex][cellIndex] = color;
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify(canvas));
+      } catch(e) {
+        console.log("Error: Couldn't paint connecting cell ["+rowIndex+", "+cellIndex+"].");
+      }
+    }
+  }
 }
 
 /* Return a 404 page */

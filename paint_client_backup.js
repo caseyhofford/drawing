@@ -160,26 +160,17 @@ function clearCanvas()
   send_change.send();
 }
 
-function clickCell(cell)
+function clickCell()
 {
   var x = Math.round(canvas_mouse_x/cell_size);
   var y = Math.round(canvas_mouse_y/cell_size);
-  var tableCell;
-  if(cell) {
-    x = parseInt(cell.x);
-    y = parseInt(cell.y);
-  }
-  if(lastCell = [])
-  {
-    lastCell = tableArray[x][y];
-  }
   var c = pen_color;
+  var cellIndex = x + (pen_size/4 - i);
+  var rowIndex = y + (pen_size/4 - j);
   for(var i=0; i<pen_size/2; i++) {
     for(var j=0; j<pen_size/2; j++) {
-      var cellIndex = x + (pen_size/4 - i);
-      var rowIndex = y + (pen_size/4 - j);
       try {
-        tableCell = tableArray[rowIndex][cellIndex];
+        var tableCell = tableArray[rowIndex][cellIndex];
         //console.log(tableCell);
         tableCell.style.backgroundColor = c;
         tableCell.lastUpdated = new Date().getTime();
@@ -193,15 +184,8 @@ function clickCell(cell)
       }
     }
   }
-  console.log(x+" "+y);
-  var cellToSmooth = tableArray[x][y];
-  console.log(celltoSmooth);
-  var smoothCells = smooth(cellToSmooth);
-  console.log(smoothCells);
-  lastCell = tableCell;
-  /*for(var k=0; k<smoothCells.length; k++) {
-    clickCell(smoothCells[k]);
-  }*/
+  smooth([rowIndex,cellIndex]);
+  lastCell = [rowIndex,cellIndex];
 }
 
 function changeClickedCells()
@@ -249,7 +233,7 @@ function pollColors()
 function colorsListener()
 {
   this.endTime = new Date().getTime();
-  console.log("Request load time: "+(this.endTime-this.startTime)+". Parsing response...");
+  // console.log("Request load time: "+(this.endTime-this.startTime)+". Parsing response...");
   var canvas = JSON.parse(this.responseText);
   var cellCount = 0;
   var changedCellCount = 0;
@@ -320,19 +304,8 @@ function smooth(newCell)
 {
   //console.log("new:"+newCell+"old:"+lastCell);
   var pen_radius = pen_size/2;
-  //var right, down
-  var newCellX = newCell.x;
-  var newCellY = newCell.y;
-  var lastCellX = lastCell.x;
-  var lastCellY = lastCell.y;
-  var xDiff = newCellX-lastCellX;
-  var xDiffAbs = Math.abs(xDiff);
-  var yDiff = (newCellY-lastCellY);
-  var yDiffAbs = Math.abs(newCellY-lastCellY);
-
-  var cellsToAdd = [];
-
-  if (xDiffAbs <= pen_size && yDiffAbs <= pen_size)
+  var right, down;
+  if (Math.abs(newCell[0]-lastCell[0]) <= pen_size && Math.abs(newCell[1]-lastCell[1]) <= pen_size)
   {
     return;
   }
@@ -346,36 +319,48 @@ function smooth(newCell)
     //console.log(lastCell)
     if (clickDragFlag)
     {
-      var new1, new0;
-      var slope = (newCellX-lastCellX)/(newCellY-lastCellY);
-      for (i = 1; i < xDiffAbs; i+=cell_size)
+      var slope = (newCell[0]-lastCell[0])/(newCell[1]-lastCell[1]);
+      if(!isFinite(slope) || slope  > 15 || slope < -15)
       {
-        if(!isFinite(slope) || slope  > 15 || slope < -15)
+        for (i = 1; i < Math.abs(newCell[0]-lastCell[0]); i++)
         {
-          if(xDiff > 0)//move down
+          if(newCell[0]-lastCell[0] > 0)
           {
-            new1 = lastCellY;
-            new0 = lastCellX + i;
+            var new1 = lastCell[1];
+            var new0 = lastCell[0] + i;
           }
-          else if (xDiff < 0)//move up
+          else if (newCell[0]-lastCell[0] < 0)
           {
-            new1 = lastCellY;
-            new0 = lastCellX - i;
+            var new1 = lastCell[1];
+            var new0 = lastCell[0] - i;
           }
         }
-        else if (isFinite(slope) && !isNaN(slope))
+      }
+      if(isFinite(slope) && !isNaN(slope))
+      {
+        console.log("x: "+(newCell[0]-lastCell[0])+" y: "+(newCell[1]-lastCell[1]));
+        for (i = 1; i < Math.abs(newCell[1]-lastCell[1]); i++)
         {
-          //console.log("x: "+xDiff+" y: "+yDiff);
-          if ((xDiff>0 && yDiff>0) || (xDiff<0 && yDiff>0))//down,right
+          if ((newCell[0]-lastCell[0])>0 && (newCell[1]-lastCell[1])>0)
           {
-            new0 = Math.floor(lastCellX+(slope*i));
-            new1 = Math.floor(lastCellY+i);
+            var new0 = Math.floor(lastCell[0]+(slope*i));
+            var new1 = Math.floor(lastCell[1]+i);
           }
           //console.log(i+"[0]:"+new0);
-          else if(((newCellX-lastCellX)<0 && (newCellY-lastCellY)<0)||((newCellX-lastCellX)>0 && (newCellY-lastCellY)<0))//up,left
+          else if ((newCell[0]-lastCell[0])<0 && (newCell[1]-lastCell[1])>0)
           {
-            new0 = Math.floor(lastCellX+(slope*(-i)));
-            new1 = Math.floor(lastCellY-i);
+            var new0 = Math.floor(lastCell[0]+(slope*i));
+            var new1 = Math.floor(lastCell[1]+i);
+          }
+          else if((newCell[0]-lastCell[0])<0 && (newCell[1]-lastCell[1])<0)
+          {
+            var new0 = Math.floor(lastCell[0]+(slope*(-i)));
+            var new1 = Math.floor(lastCell[1]-i);
+          }
+          else if((newCell[0]-lastCell[0])>0 && (newCell[1]-lastCell[1])<0)
+          {
+            var new0 = Math.floor(lastCell[0]+(slope*(-i)));
+            var new1 = Math.floor(lastCell[1]-i);
           }
           //console.log("[1]:"+new1);
           /*try{
@@ -405,16 +390,14 @@ function smooth(newCell)
               }
             }
           }*/
+          console.log("0:"+new0+" 1:"+new1);
+          var url = "build_array?zero="+new0+"&one="+new1+"&color="+pen_color+"&size="+pen_radius;
+          var build_array = new XMLHttpRequest;
+          build_array.onload = colorsListener;
+          build_array.open("get", url);
+          build_array.send();
         }
-        cellsToAdd.push(tableArray[new0][new1]);
       }
-      console.log("0:"+new0+" 1:"+new1);
-      var url = "build_array?zero="+new0+"&one="+new1+"&color="+pen_color+"&size="+pen_radius;
-      var build_array = new XMLHttpRequest;
-      build_array.onload = colorsListener;
-      build_array.open("get", url);
-      build_array.send();
     }
   }
-  return cellsToAdd;
 }
